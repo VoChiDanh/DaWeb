@@ -1,7 +1,68 @@
 const ORG = "SinceRPG";
 const apiBase = "https://api.github.com";
+const catalogUrl = "data/catalog.json";
 
 const fallbackRepos = [
+  {
+    name: "StackCraft",
+    html_url: "https://github.com/SinceRPG/StackCraft",
+    description: "Public SinceRPG plugin repository.",
+    homepage: "",
+    language: "Java",
+    stargazers_count: 0,
+    open_issues_count: 0,
+    pushed_at: "2026-05-29T13:57:00Z",
+    default_branch: "master",
+    has_pages: false
+  },
+  {
+    name: "SinceUpdater",
+    html_url: "https://github.com/SinceRPG/SinceUpdater",
+    description: "Public SinceRPG updater plugin repository.",
+    homepage: "",
+    language: "Java",
+    stargazers_count: 0,
+    open_issues_count: 0,
+    pushed_at: "2026-05-29T13:57:00Z",
+    default_branch: "master",
+    has_pages: false
+  },
+  {
+    name: "SincePet",
+    html_url: "https://github.com/SinceRPG/SincePet",
+    description: "Public SinceRPG pet plugin repository.",
+    homepage: "",
+    language: "Java",
+    stargazers_count: 0,
+    open_issues_count: 0,
+    pushed_at: "2026-05-29T13:57:00Z",
+    default_branch: "master",
+    has_pages: false
+  },
+  {
+    name: "SinceMenu",
+    html_url: "https://github.com/SinceRPG/SinceMenu",
+    description: "Public SinceRPG menu plugin repository.",
+    homepage: "",
+    language: "Java",
+    stargazers_count: 0,
+    open_issues_count: 0,
+    pushed_at: "2026-05-29T13:57:00Z",
+    default_branch: "master",
+    has_pages: false
+  },
+  {
+    name: "SinceGPS",
+    html_url: "https://github.com/SinceRPG/SinceGPS",
+    description: "Public SinceRPG navigation plugin repository.",
+    homepage: "",
+    language: "Java",
+    stargazers_count: 0,
+    open_issues_count: 0,
+    pushed_at: "2026-05-29T13:57:00Z",
+    default_branch: "master",
+    has_pages: false
+  },
   {
     name: "SinceDungeon",
     html_url: "https://github.com/SinceRPG/SinceDungeon",
@@ -25,6 +86,30 @@ const fallbackRepos = [
     pushed_at: "2026-05-17T13:18:56Z",
     default_branch: "master",
     has_pages: false
+  },
+  {
+    name: "SinceBooster",
+    html_url: "https://github.com/SinceRPG/SinceBooster",
+    description: "Plugin designed to support MMOCore by enhancing leveling through shared player boosters.",
+    homepage: "",
+    language: "Java",
+    stargazers_count: 0,
+    open_issues_count: 0,
+    pushed_at: "2026-05-16T08:00:00Z",
+    default_branch: "master",
+    has_pages: false
+  },
+  {
+    name: "PageLore",
+    html_url: "https://github.com/SinceRPG/PageLore",
+    description: "Public SinceRPG lore and page resource repository.",
+    homepage: "https://sincerpg.github.io/PageLore/",
+    language: "Java",
+    stargazers_count: 1,
+    open_issues_count: 0,
+    pushed_at: "2026-05-22T10:00:00Z",
+    default_branch: "master",
+    has_pages: true
   },
   {
     name: "ClientCore",
@@ -67,6 +152,7 @@ const fallbackRepos = [
 const state = {
   repos: [],
   commits: new Map(),
+  source: "live",
   filter: "all",
   search: ""
 };
@@ -161,12 +247,14 @@ function createActionLinks(repo, includeChangelog = true) {
 
 function renderSummary(repos, fromApi) {
   const latest = [...repos].sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at))[0];
-  els.apiState.textContent = fromApi ? "Online" : "Fallback";
+  els.apiState.textContent = fromApi ? "Online" : state.source === "catalog" ? "Static catalog" : "Fallback";
   els.resourceCount.textContent = repos.length;
   els.latestPush.textContent = latest ? formatDate(latest.pushed_at) : "--";
   els.terminalLine.textContent = fromApi
     ? `loaded ${repos.length} public repositories`
-    : "using bundled fallback data";
+    : state.source === "catalog"
+      ? `loaded ${repos.length} repositories from catalog.json`
+      : "using bundled fallback data";
   els.updatedAt.textContent = `Updated: ${formatDate(new Date().toISOString())}`;
 }
 
@@ -239,6 +327,10 @@ function getResourceNameFromHash() {
 
 async function loadCommits(repo) {
   if (state.commits.has(repo.name)) return state.commits.get(repo.name);
+  if (Array.isArray(repo.commits)) {
+    state.commits.set(repo.name, repo.commits);
+    return repo.commits;
+  }
   const commits = await fetchJson(`${apiBase}/repos/${ORG}/${repo.name}/commits?per_page=30`);
   state.commits.set(repo.name, commits);
   return commits;
@@ -370,6 +462,16 @@ async function fetchOrgRepos() {
   return repos;
 }
 
+async function fetchCatalog() {
+  const response = await fetch(`${catalogUrl}?v=${Date.now()}`, {
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(`Catalog ${response.status}`);
+  const catalog = await response.json();
+  if (!Array.isArray(catalog.repos)) throw new Error("Invalid catalog");
+  return catalog.repos;
+}
+
 async function enrichRelease(repo) {
   try {
     const release = await fetchJson(`${apiBase}/repos/${ORG}/${repo.name}/releases/latest`);
@@ -391,17 +493,30 @@ async function enrichRelease(repo) {
 
 async function loadResources() {
   try {
-    const repos = await fetchOrgRepos();
+    const repos = await fetchCatalog();
     const visibleRepos = repos
       .filter((repo) => !repo.fork && repo.name !== ".github")
       .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
 
-    state.repos = await Promise.all(visibleRepos.map(enrichRelease));
-    renderSummary(state.repos, true);
-  } catch (error) {
-    state.repos = fallbackRepos;
+    state.source = "catalog";
+    state.repos = visibleRepos;
     renderSummary(state.repos, false);
-    console.warn(error);
+  } catch (error) {
+    try {
+      const repos = await fetchOrgRepos();
+      const visibleRepos = repos
+        .filter((repo) => !repo.fork && repo.name !== ".github")
+        .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
+
+      state.source = "live";
+      state.repos = await Promise.all(visibleRepos.map(enrichRelease));
+      renderSummary(state.repos, true);
+    } catch (apiError) {
+      state.source = "fallback";
+      state.repos = fallbackRepos;
+      renderSummary(state.repos, false);
+      console.warn(error, apiError);
+    }
   }
 
   renderResources();

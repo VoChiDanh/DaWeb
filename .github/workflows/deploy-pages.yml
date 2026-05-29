@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - master
+  schedule:
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +30,11 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+
+      - name: Build GitHub catalog
+        run: node scripts/build-data.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
