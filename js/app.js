@@ -255,7 +255,8 @@ function renderSummary(repos, fromApi) {
     : state.source === "catalog"
       ? `loaded ${repos.length} repositories from catalog.json`
       : "using bundled fallback data";
-  els.updatedAt.textContent = `Updated: ${formatDate(new Date().toISOString())}`;
+  const updateTime = state.generatedAt ? new Date(state.generatedAt) : new Date();
+  els.updatedAt.textContent = `Updated: ${formatDate(updateTime.toISOString())}`;
 }
 
 function getFilteredRepos() {
@@ -574,7 +575,7 @@ async function fetchCatalog() {
   if (!response.ok) throw new Error(`Catalog ${response.status}`);
   const catalog = await response.json();
   if (!Array.isArray(catalog.repos)) throw new Error("Invalid catalog");
-  return catalog.repos;
+  return catalog;
 }
 
 async function enrichRelease(repo) {
@@ -598,13 +599,14 @@ async function enrichRelease(repo) {
 
 async function loadResources() {
   try {
-    const repos = await fetchCatalog();
-    const visibleRepos = repos
+    const catalog = await fetchCatalog();
+    const visibleRepos = catalog.repos
       .filter((repo) => !repo.fork && repo.name !== ".github")
       .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
 
     state.source = "catalog";
     state.repos = visibleRepos;
+    state.generatedAt = catalog.generatedAt;
     renderSummary(state.repos, false);
   } catch (error) {
     try {

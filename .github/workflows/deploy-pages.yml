@@ -5,8 +5,10 @@ on:
     branches:
       - master
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
+  repository_dispatch:
+    types: [update-catalog]
 
 permissions:
   contents: read
