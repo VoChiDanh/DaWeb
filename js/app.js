@@ -336,18 +336,123 @@ async function loadCommits(repo) {
   return commits;
 }
 
-function formatCommitMessage(commit) {
-  const message = commit?.commit?.message || "Commit update";
-  const [title, ...bodyLines] = message.split("\n").map((line) => line.trim()).filter(Boolean);
-  return {
-    title: title || "Commit update",
-    body: bodyLines.join(" ")
+function renderInlineMarkdown(value) {
+  return escapeHtml(value)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+}
+
+function flushParagraph(lines, html) {
+  if (lines.length === 0) return;
+  html.push(`<p>${renderInlineMarkdown(lines.join(" "))}</p>`);
+  lines.length = 0;
+}
+
+function flushList(items, html, ordered) {
+  if (items.length === 0) return;
+  const tag = ordered ? "ol" : "ul";
+  html.push(`<${tag}>${items.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</${tag}>`);
+  items.length = 0;
+}
+
+function renderMarkdown(markdown) {
+  const lines = String(markdown || "").replace(/\r\n/g, "\n").split("\n");
+  const html = [];
+  const paragraph = [];
+  const list = [];
+  let listOrdered = false;
+  let inCodeBlock = false;
+  let codeLines = [];
+
+  const flushOpenBlocks = () => {
+    flushParagraph(paragraph, html);
+    flushList(list, html, listOrdered);
   };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+
+    if (line.trim().startsWith("```")) {
+      if (inCodeBlock) {
+        html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+        codeLines = [];
+        inCodeBlock = false;
+      } else {
+        flushOpenBlocks();
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(rawLine);
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushOpenBlocks();
+      continue;
+    }
+
+    const heading = /^(#{1,4})\s+(.+)$/.exec(line);
+    if (heading) {
+      flushOpenBlocks();
+      const level = Math.min(heading[1].length + 2, 5);
+      html.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+      continue;
+    }
+
+    const unordered = /^\s*[-*]\s+(.+)$/.exec(line);
+    if (unordered) {
+      flushParagraph(paragraph, html);
+      if (list.length > 0 && listOrdered) flushList(list, html, listOrdered);
+      listOrdered = false;
+      list.push(unordered[1]);
+      continue;
+    }
+
+    const ordered = /^\s*\d+[.)]\s+(.+)$/.exec(line);
+    if (ordered) {
+      flushParagraph(paragraph, html);
+      if (list.length > 0 && !listOrdered) flushList(list, html, listOrdered);
+      listOrdered = true;
+      list.push(ordered[1]);
+      continue;
+    }
+
+    paragraph.push(line.trim());
+  }
+
+  if (inCodeBlock) {
+    html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+  }
+  flushOpenBlocks();
+
+  return html.join("") || "<p>Commit update</p>";
+}
+
+function getCommitTitle(commit) {
+  const message = commit?.commit?.message || "Commit update";
+  const firstMeaningfulLine = message
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line && !line.startsWith("#"));
+  return firstMeaningfulLine || "Commit update";
+}
+
+function getCommitBody(commit) {
+  const message = commit?.commit?.message || "Commit update";
+  const lines = message.split("\n");
+  const firstContentIndex = lines.findIndex((line) => line.trim());
+  if (firstContentIndex === -1) return "";
+  return lines.slice(firstContentIndex + 1).join("\n").trim();
 }
 
 function renderCommitChangelog(repo, commits, isFallback = false) {
   const items = commits.map((commit) => {
-    const message = formatCommitMessage(commit);
+    const title = getCommitTitle(commit);
+    const body = getCommitBody(commit);
     const date = commit?.commit?.author?.date || commit?.commit?.committer?.date;
     const author = commit?.commit?.author?.name || commit?.author?.login || "SinceRPG";
     const sha = commit?.sha ? commit.sha.slice(0, 7) : "";
@@ -359,8 +464,8 @@ function renderCommitChangelog(repo, commits, isFallback = false) {
           <span>${escapeHtml(author)}</span>
           ${sha ? `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${escapeHtml(sha)}</a>` : ""}
         </div>
-        <h3>${escapeHtml(message.title)}</h3>
-        ${message.body ? `<p>${escapeHtml(message.body)}</p>` : ""}
+        <h3>${renderInlineMarkdown(title)}</h3>
+        ${body ? `<div class="changelog-markdown">${renderMarkdown(body)}</div>` : ""}
       </article>
     `;
   }).join("");

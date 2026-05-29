@@ -541,6 +541,64 @@ h2 {
   line-height: 1.6;
 }
 
+.changelog-markdown {
+  margin-top: 0.65rem;
+  color: var(--muted);
+  line-height: 1.62;
+}
+
+.changelog-markdown h3,
+.changelog-markdown h4,
+.changelog-markdown h5 {
+  margin: 0.85rem 0 0.4rem;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 850;
+}
+
+.changelog-markdown p {
+  margin: 0.55rem 0 0;
+}
+
+.changelog-markdown ul,
+.changelog-markdown ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.changelog-markdown li {
+  padding-left: 0.15rem;
+}
+
+.changelog-item code,
+.changelog-markdown code {
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  padding: 0.08rem 0.28rem;
+  background: rgba(10, 13, 18, 0.86);
+  color: #8ef1cd;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.changelog-markdown pre {
+  margin: 0.7rem 0 0;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.85rem;
+  background: #0a0d12;
+}
+
+.changelog-markdown pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #d8e4f5;
+}
+
 @media (max-width: 991.98px) {
   .hero {
     padding-top: 4rem;
