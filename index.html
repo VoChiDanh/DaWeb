@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SinceRPG Resources</title>
+    <meta name="description" content="Dev builds and resources for public SinceRPG projects.">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/site.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="navbar navbar-expand-lg">
+        <div class="container">
+          <a class="navbar-brand" href="#">
+            <span class="brand-mark">S</span>
+            <span>SinceRPG</span>
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav" aria-controls="siteNav" aria-expanded="false" aria-label="Open menu">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="siteNav">
+            <div class="navbar-nav ms-auto">
+              <a class="nav-link" href="#resources">Resources</a>
+              <a class="nav-link" href="#builds">Dev Builds</a>
+              <a class="nav-link" href="https://github.com/SinceRPG" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Public resources from GitHub</p>
+            <h1>SinceRPG Resources</h1>
+            <p class="hero-text">Track plugins, wikis, and the latest dev builds from the SinceRPG organization. Data is loaded directly from the GitHub API every time the page opens.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#resources">View resources</a>
+              <a class="btn btn-outline-light" href="https://github.com/orgs/SinceRPG/repositories" target="_blank" rel="noreferrer">Open GitHub org</a>
+            </div>
+          </div>
+          <div class="hero-panel" aria-label="GitHub resource summary">
+            <div class="org-card">
+              <img src="https://avatars.githubusercontent.com/u/285144518?v=4" alt="SinceRPG avatar">
+              <div>
+                <span>GitHub organization</span>
+                <strong>SinceRPG</strong>
+              </div>
+            </div>
+            <div class="signal-row">
+              <span>Live API</span>
+              <strong id="apiState">Connecting</strong>
+            </div>
+            <div class="signal-row">
+              <span>Resources</span>
+              <strong id="resourceCount">--</strong>
+            </div>
+            <div class="signal-row">
+              <span>Latest push</span>
+              <strong id="latestPush">--</strong>
+            </div>
+            <div class="terminal-preview">
+              <span>$ github org SinceRPG</span>
+              <span id="terminalLine">fetching repositories...</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="toolbar-section" id="resources">
+        <div class="container">
+          <div class="toolbar">
+            <div class="search-box">
+              <label class="visually-hidden" for="searchInput">Search resources</label>
+              <input id="searchInput" class="form-control" type="search" placeholder="Search plugins, wikis, Paper/Folia...">
+            </div>
+            <div class="filter-group" role="group" aria-label="Filter resources">
+              <button class="filter-btn active" data-filter="all" type="button">All</button>
+              <button class="filter-btn" data-filter="plugin" type="button">Plugin</button>
+              <button class="filter-btn" data-filter="wiki" type="button">Wiki</button>
+              <button class="filter-btn" data-filter="pages" type="button">Docs</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="resources-section">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Resource catalog</p>
+              <h2>Downloads & documentation</h2>
+            </div>
+            <p id="updatedAt" class="muted-text">Updating...</p>
+          </div>
+          <div id="resourceGrid" class="resource-grid" aria-live="polite"></div>
+          <div id="emptyState" class="empty-state d-none">
+            No matching resources found.
+          </div>
+        </div>
+      </section>
+
+      <section class="builds-section" id="builds">
+        <div class="container build-strip">
+          <div>
+            <p class="eyebrow">Dev builds</p>
+            <h2>Get the latest builds from GitHub releases</h2>
+          </div>
+          <p class="muted-text">Every public repository stays visible. Downloads appear only when a GitHub release provides an asset.</p>
+        </div>
+      </section>
+
+      <section id="detailView" class="detail-section d-none" aria-live="polite">
+        <div class="container">
+          <a class="back-link" href="#resources">Back to resources</a>
+          <div id="detailContent"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>SinceRPG Resources</span>
+        <span>Powered by GitHub public API</span>
+      </div>
+    </footer>
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
